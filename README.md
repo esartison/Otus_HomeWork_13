@@ -1,65 +1,129 @@
 # Домашнее задание Сартисона Евгения №13
 
-Решил выбрать следующий вариант, чтобы разобраться с CockroachDB
+🎯 Задание
+Разверните Yugabyte или Greenplum в Kubernetes или облаках.
+Загрузите датасет 10 Гб+ .
+Проведите тест скорости запросов в сравнении с одиночным инстансом PostgreSQL.
+Опишите процесс развертывания, настройки, проблемы и результаты.
 
-🛠 Вариант 1: CockroachDB в облаке
-Разверни CockroachDB в облаке
-Используй датасет 10 Гб+
-Сравни производительность запросов с однопользовательским инстансом PostgreSQL
-Опиши процесс, решения и возникшие сложности
+⭐ Задание повышенной сложности*
+Разверните оба варианта (Yugabyte и Greenplum)
+Проведите сравнение производительности и подготовьте аналитический отчёт.
 
+Задание повышенной сложности выполнить не получится, так-как GreenPlum перестал быть open-source. 
 
-## **(1) Подготовка к задаче**
-
-Решил создать 2 абсолютно одинаковые VM в Yandex Cloud и установить обе базы с настройками по умолчанию.
-
-**CockroachDB**
-
-<img width="692" height="803" alt="image" src="https://github.com/user-attachments/assets/5093bdaf-69ff-4f29-bc7a-9ffe89523683" />
-
-
-**PostgreSQL**
-
-<img width="720" height="822" alt="image" src="https://github.com/user-attachments/assets/fe005783-9953-433a-bbf0-27b21865459e" />
+Решил разворачивать Postgres и Yugabyte в Docker, чтобы были равные условия и можно было сравнить. 
 
 
 
-## **(2) Установка CockroachDB **
+## **(2) Установка Yugabyte **
 
-Пошел по иструкции из [Как установить кластер CockroachDB на Ubuntu 24.04](https://itshaman.ru/articles/4879/kak-ustanovit-klaster-cockroachdb-na-ubuntu-2404)
+Пошел по иструкции из [Install YugabyteDB in Docker](https://docs.yugabyte.com/preview/quick-start/docker/)
 
-Установил Cockroachdb, использовал настройки по умолчанию и ничего не менял
-<img width="1441" height="752" alt="image" src="https://github.com/user-attachments/assets/75be0c48-6cb9-47bf-afca-d77339e70575" />
+Стащил образ
+```
+student:~$ docker pull yugabytedb/yugabyte:2.25.2.0-b359
+2.25.2.0-b359: Pulling from yugabytedb/yugabyte
+09720f817e0c: Pull complete 
+81c92ce6d7b6: Pull complete 
+809ac79c7b65: Pull complete 
+5d55c0eeaad0: Pull complete 
+1b55dea911eb: Pull complete 
+9158f1db666b: Pull complete 
+457bd16d685b: Pull complete 
+556765b224e4: Pull complete 
+cdc0faf24508: Pull complete 
+4f4fb700ef54: Pull complete 
+0137975de31d: Pull complete 
+6205293b0026: Pull complete 
+b327c1b23eac: Pull complete 
+80eb0dc40f0a: Pull complete 
+c5d2c264cd4c: Pull complete 
+8db778a4947d: Pull complete 
+7de11e291cc5: Pull complete 
+4e45d9cd6e55: Pull complete 
+Digest: sha256:f1b868431c9f71013f451df8cc63c59886568bb1254e4cb6f98de14d0232a3ad
+Status: Downloaded newer image for yugabytedb/yugabyte:2.25.2.0-b359
+docker.io/yugabytedb/yugabyte:2.25.2.0-b359
+```
 
-Проверка подключения
-<img width="1463" height="586" alt="image" src="https://github.com/user-attachments/assets/2c1ef1c5-6fee-40ae-a060-98d80e4f7d27" />
+Запустил контейнер
+```
+student:~$ docker run -d --name yugabyteotus \
+        -p 7000:7000  -p 15433:15433 -p 5433:5433 -p 9042:9042 \
+        yugabytedb/yugabyte:2.25.2.0-b359 bin/yugabyted start \
+        --background=false
+e0730e36ee65afdce865c436239657f4e4970dc6c230e98d0b09dbe86140e32d
+```
 
-создать базу mydb
-<img width="1384" height="536" alt="image" src="https://github.com/user-attachments/assets/4a0855b8-10fa-4f4f-b8ed-fcf61bbbe581" />
+Проверил состояние - все хорошо
+```
+student:~$ docker ps
+CONTAINER ID   IMAGE                               COMMAND                  CREATED          STATUS          PORTS                                                                                                                                                                                                                                                                       NAMES
+e0730e36ee65   yugabytedb/yugabyte:2.25.2.0-b359   "/sbin/tini -- bin/y…"   26 seconds ago   Up 26 seconds   0.0.0.0:5433->5433/tcp, [::]:5433->5433/tcp, 6379/tcp, 7100/tcp, 7200/tcp, 0.0.0.0:7000->7000/tcp, [::]:7000->7000/tcp, 9000/tcp, 9100/tcp, 10100/tcp, 11000/tcp, 0.0.0.0:9042->9042/tcp, [::]:9042->9042/tcp, 0.0.0.0:15433->15433/tcp, [::]:15433->15433/tcp, 12000/tcp   yugabyteotus
+
+
+---------------------------------------------------------------------------------------------------------+
+|                                                 yugabyted                                                 |
++-----------------------------------------------------------------------------------------------------------+
+| Status              : Running.                                                                            |
+| YSQL Status         : Ready                                                                               |
+| Replication Factor  : 1                                                                                   |
+| YugabyteDB UI       : http://e0730e36ee65:15433                                                           |
+| JDBC                : jdbc:postgresql://e0730e36ee65:5433/yugabyte?user=yugabyte&password=yugabyte        |
+| YSQL                : bin/ysqlsh -h e0730e36ee65  -U yugabyte -d yugabyte                                 |
+| YCQL                : bin/ycqlsh e0730e36ee65 9042 -u cassandra                                           |
+| Data Dir            : /root/var/data                                                                      |
+| Log Dir             : /root/var/logs                                                                      |
+| Universe UUID       : 34f7e676-63db-4c73-b41b-5782e1c2f445                                                |
++-----------------------------------------------------------------------------------------------------------+
+student:~$ 
+```
+
+Попробовал подключиться и проверил состояние кластера - все хорошо
+```
+student:~$ docker exec -it yugabyteotus bash -c '/home/yugabyte/bin/ysqlsh --echo-queries --host $(hostname)'
+ysqlsh (15.12-YB-2.25.2.0-b0)
+Type "help" for help.
+
+yugabyte=# 
+yugabyte=# 
+yugabyte=# \l
+                                                  List of databases
+      Name       |  Owner   | Encoding | Collate |    Ctype    | ICU Locale | Locale Provider |   Access privileges   
+-----------------+----------+----------+---------+-------------+------------+-----------------+-----------------------
+ postgres        | postgres | UTF8     | C       | en_US.UTF-8 |            | libc            | 
+ system_platform | postgres | UTF8     | C       | en_US.UTF-8 |            | libc            | 
+ template0       | postgres | UTF8     | C       | en_US.UTF-8 |            | libc            | =c/postgres          +
+                 |          |          |         |             |            |                 | postgres=CTc/postgres
+ template1       | postgres | UTF8     | C       | en_US.UTF-8 |            | libc            | =c/postgres          +
+                 |          |          |         |             |            |                 | postgres=CTc/postgres
+ yugabyte        | postgres | UTF8     | C       | en_US.UTF-8 |            | libc            | 
+(5 rows)
+
+```
 
 Создал тестовый набор данных
 ```
-root@localhost:26257/defaultdb> use mydb;
-SET
-Time: 6ms total (execution 6ms / network 0ms)
-
-root@localhost:26257/mydb> CREATE TABLE foo (
-                        ->     id INT PRIMARY KEY,
-                        ->     name VARCHAR(255),
-                        -> data VARCHAR(4000)
-                        -> );
+yugabyte=# \c yugabyte
+You are now connected to database "yugabyte" as user "yugabyte".
+yugabyte=# 
+yugabyte=# 
+yugabyte=#  CREATE TABLE foo ( id INT PRIMARY KEY,
+yugabyte(#                            name VARCHAR(255),
+yugabyte(#                            data VARCHAR(4000)
+yugabyte(#                            );
+CREATE TABLE foo ( id INT PRIMARY KEY,
+                           name VARCHAR(255),
+                           data VARCHAR(4000)
+                           );
 CREATE TABLE
-Time: 115ms total (execution 115ms / network 0ms)
 
-INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,1000000) i;
 
-root@localhost:26257/mydb> SELECT sum(range_size_mb) FROM [SHOW RANGES FROM TABLE foo  WITH DETAILS];
-            sum
----------------------------
-  14118.38162900000000000
-(1 row)
 
-Time: 1.823s total (execution 1.812s / network 0.011s)
+INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,100000000) i;
+
+
 ```
 загрузил таблицу размером 14Gb.
 
