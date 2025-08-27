@@ -16,7 +16,7 @@
 
 
 
-## **(2) Установка Yugabyte **
+## **(1) Установка Yugabyte и загрузка тестовых данных **
 
 Пошел по иструкции из [Install YugabyteDB in Docker](https://docs.yugabyte.com/preview/quick-start/docker/)
 
@@ -127,7 +127,7 @@ INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_seri
 ```
 загрузил таблицу размером 14Gb.
 
-Синтаксис для генерации тестовой таблицы одинаковый на CockroachDB и Postgres. 
+Синтаксис для генерации тестовой таблицы одинаковый на Yugabyte и Postgres. 
 
 ## **(3) Установка PostgreSQL **
 Установил Postgres и создал базу, использовал настройки по умолчанию и ничего не менял
