@@ -109,15 +109,17 @@ yugabyte=# \c yugabyte
 You are now connected to database "yugabyte" as user "yugabyte".
 yugabyte=# 
 yugabyte=# 
-yugabyte=#  CREATE TABLE foo ( id INT PRIMARY KEY,
+yugabyte=# CREATE TABLE foo ( id INT ,
 yugabyte(#                            name VARCHAR(255),
 yugabyte(#                            data VARCHAR(4000)
 yugabyte(#                            );
-CREATE TABLE foo ( id INT PRIMARY KEY,
+CREATE TABLE foo ( id INT ,
                            name VARCHAR(255),
                            data VARCHAR(4000)
                            );
 CREATE TABLE
+Time: 290.033 ms
+
 
 
 
