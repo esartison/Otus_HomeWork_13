@@ -128,13 +128,22 @@ INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_seri
 INSERT 0 50000000
 Time: 18225338.785 ms (05:03:45.339)
 
-
+yugabyte=# INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
+INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
+INSERT 0 50000000
+Time: 33240527.300 ms (09:14:00.527)
+yugabyte=# select pg_size_pretty(pg_table_size('foo'));
+select pg_size_pretty(pg_table_size('foo'));
+ pg_size_pretty 
+----------------
+ 6639 MB
 ```
-загрузил таблицу размером 14Gb.
+загрузил таблицу размером 6.7. Загрузка идет очень долго, возможно сам Yugabyte как-то оптимизирует и сжимает место. 
+
 
 Синтаксис для генерации тестовой таблицы одинаковый на Yugabyte и Postgres. 
 
-## **(3) Установка PostgreSQL **
+## **(3) Установка PostgreSQL и загрузка тестовых данных**
 Установил Postgres и создал базу, использовал настройки по умолчанию и ничего не менял
 ```
 pgdb001:установка Postgres 
@@ -197,19 +206,31 @@ Time: 44.158 ms
 
 Решил выполнить 2 простых запроса на обоих базах и сравнить про-ть
 
-**CockroachDB**
+**Yugabyte**
 ```
-(a) root@localhost:26257/mydb> select max(id) from foo;
-     max
--------------
-  100000000
+(a) yugabyte=# select max(id) from foo;
+select max(id) from foo;
+
+   max    
+----------
+ 50000000
 (1 row)
 
-Time: 3ms total (execution 3ms / network 0ms)
+Time: 399059.192 ms (06:39.059)
 
-(б) select count(0) from foo; -- выполнялся более 30 минут и не дождался выполнения
+(б) select count(0) from foo;
+yugabyte=# select count(0) from foo; 
+select count(0) from foo;
+
+   count   
+-----------
+ 105000000
+(1 row)
+
+Time: 342794.048 ms (05:42.794)
+
 ```
-Select Count из всей таблицы очень долго выполнялся и в итоге я не дождался, пробовал перезапускать. Возможно, 2Gb RAM слишком мало. 
+
 
 
 **PostgreSQL**
