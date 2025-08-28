@@ -123,7 +123,10 @@ Time: 290.033 ms
 
 
 
-INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,100000000) i;
+yugabyte=# INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
+INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
+INSERT 0 50000000
+Time: 18225338.785 ms (05:03:45.339)
 
 
 ```
