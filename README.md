@@ -120,9 +120,6 @@ CREATE TABLE foo ( id INT ,
 CREATE TABLE
 Time: 290.033 ms
 
-
-
-
 yugabyte=# INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
 INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
 INSERT 0 50000000
@@ -138,8 +135,8 @@ select pg_size_pretty(pg_table_size('foo'));
 ----------------
  6639 MB
 ```
-загрузил таблицу размером 6.7. Загрузка идет очень долго, возможно сам Yugabyte как-то оптимизирует и сжимает место. 
-
+загрузил таблицу размером 6.7Gb. Загрузка идет очень долго, возможно сам Yugabyte как-то оптимизирует и сжимает место. 
+Вставка происходила десятки часов, хотя на Postgres добежала всего за 10 минут, возможно влияют какие-то настройки.
 
 Синтаксис для генерации тестовой таблицы одинаковый на Yugabyte и Postgres. 
 
@@ -165,13 +162,32 @@ postgres=# CREATE TABLE foo ( id INT ,
                            data VARCHAR(4000)
                            );
 CREATE TABLE
+postgres=# INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
+INSERT 0 50000000
+Time: 119098.271 ms (01:59.098)
+postgres=# 
 
-INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
-INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
-INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,5000000) i;
 
+postgres=# INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
+INSERT 0 50000000
+Time: 159322.516 ms (02:39.323)
+
+
+postgres=# INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,5000000) i;
+INSERT 0 5000000
+Time: 7122.283 ms (00:07.122)
+
+
+
+postgres=# select pg_size_pretty(pg_table_size('foo'));
+ pg_size_pretty 
+----------------
+ 6837 MB
+(1 row)
+
+Time: 13.684 ms
 ```
-загрузил таблицу размером 13Gb.
+загрузил таблицу размером 6.8Gb. Загрузить можно было и больше, но на Yugabyte вставка 50m строк занимала 10 часов. 
 
 
 
@@ -209,26 +225,27 @@ Time: 342794.048 ms (05:42.794)
 
 **PostgreSQL**
 ```
-(a) mydb=#  select max(id) from foo;
-    max
------------
- 200000000
+(a) postgres=# select max(id) from foo;
+   max    
+----------
+ 50000000
 (1 row)
 
-Time: 0.339 ms
+Time: 42826.000 ms (00:42.826)
 
-Time: 3ms total (execution 3ms / network 0ms)
 
-(б) mydb=#  select count(0) from foo;
-   count
+(б) postgres=# select count(0) from foo;
+   count   
 -----------
- 200000000
+ 105000000
 (1 row)
 
-Time: 241718.252 ms (04:01.718)
+Time: 4470.065 ms (00:04.470)
 ```
 
-Первый запрос на обоих базах выполнился быстро на обоих базах и побидитель не выявлен. Второй запрос на Postgres выполнился намного быстрее.
+В обоих случаях Postgres показал про-ть на порядки лучше. Я брал настройки по умолчанию, возможно Yugabyte нужно донастроить, чтобы он хорошо работал. 
+
+Postgres вне конкуренции. 
 
 Мой тест показал что Postgres имеет лучшую про-ть при схожих конфигурациях. 
 
