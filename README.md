@@ -140,7 +140,7 @@ select pg_size_pretty(pg_table_size('foo'));
 
 Синтаксис для генерации тестовой таблицы одинаковый на Yugabyte и Postgres. 
 
-## **(3) Установка PostgreSQL и загрузка тестовых данных**
+## **(2) Установка PostgreSQL и загрузка тестовых данных**
 Поднял образ Postgres с настройками по умолчанию
 ```
 student:~$ docker run --name postdbotus -e POSTGRES_PASSWORD=mysecretpassword -p 5444:5432 -d postgres
@@ -192,7 +192,7 @@ Time: 13.684 ms
 
 
 
-## **(4) Сравнение про-ти**
+## **(3) Сравнение про-ти**
 
 Решил выполнить 2 простых запроса на обоих базах и сравнить про-ть
 
