@@ -144,58 +144,32 @@ select pg_size_pretty(pg_table_size('foo'));
 Синтаксис для генерации тестовой таблицы одинаковый на Yugabyte и Postgres. 
 
 ## **(3) Установка PostgreSQL и загрузка тестовых данных**
-Установил Postgres и создал базу, использовал настройки по умолчанию и ничего не менял
+Поднял образ Postgres с настройками по умолчанию
 ```
-pgdb001:установка Postgres 
-sudo apt install postgresql
-fixing permissions on existing directory /var/lib/postgresql/16/main ... ok
-creating subdirectories ... ok
-selecting dynamic shared memory implementation ... posix
-selecting default max_connections ... 100
-selecting default shared_buffers ... 128MB
-selecting default time zone ... Etc/UTC
-creating configuration files ... ok
-running bootstrap script ... ok
-performing post-bootstrap initialization ... ok
-syncing data to disk ... ok
-Setting up postgresql (16+257build1.1) ...
-Processing triggers for man-db (2.12.0-4build2) ...
-Processing triggers for libc-bin (2.39-0ubuntu8.5) ...
-Scanning processes...
-Scanning linux images...
-
-Running kernel seems to be up-to-date.
-
-No services need to be restarted.
-
-No containers need to be restarted.
-
-No user sessions are running outdated binaries.
-
-No VM guests are running outdated hypervisor (qemu) binaries on this host.
+student:~$ docker run --name postdbotus -e POSTGRES_PASSWORD=mysecretpassword -p 5444:5432 -d postgres
+60f71fdcbbba10a9d53c9754d6516554f9630d8be2ef586c2de97fd6600648ee
+student:~$ docker ps
+CONTAINER ID   IMAGE      COMMAND                  CREATED         STATUS         PORTS                                         NAMES
+60f71fdcbbba   postgres   "docker-entrypoint.s…"   7 seconds ago   Up 7 seconds   0.0.0.0:5444->5432/tcp, [::]:5444->5432/tcp   postdbotus
 ```
-<img width="1290" height="263" alt="image" src="https://github.com/user-attachments/assets/8d92b0a0-246a-4bb3-8930-722b44cd572b" />
+<img width="1282" height="369" alt="image" src="https://github.com/user-attachments/assets/a966b347-9955-4514-a1a6-edfbce3f0335" />
+
 
 
 Создал тестовый набор данных
 ```
-mydb=# CREATE TABLE foo (
-mydb(#     id INT PRIMARY KEY,
-mydb(#     name VARCHAR(255),
-mydb(# data VARCHAR(4000)
-mydb(# );
+postgres=# \c postgres
+You are now connected to database "postgres" as user "postgres".
+postgres=# CREATE TABLE foo ( id INT ,
+                           name VARCHAR(255),
+                           data VARCHAR(4000)
+                           );
 CREATE TABLE
-mydb=#
 
-INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,200000000) i;
+INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
+INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,50000000) i;
+INSERT INTO foo(id, name, data) SELECT i, 'name'||i, random() FROM generate_series(1,5000000) i;
 
-mydb=# SELECT pg_size_pretty(pg_relation_size('foo'));
- pg_size_pretty
-----------------
- 13 GB
-(1 row)
-
-Time: 44.158 ms
 ```
 загрузил таблицу размером 13Gb.
 
